@@ -5,13 +5,22 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { storiesQueryOptions } from "@/lib/stories-queries";
 
+function shuffleStories<T>(items: T[]) {
+  const next = [...items];
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [next[index], next[swapIndex]] = [next[swapIndex]!, next[index]!];
+  }
+  return next;
+}
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Stories — A simple story library" },
       {
         name: "description",
-        content: "Browse, search and read every story in your library. Add stories one at a time or import a CSV.",
+        content: "Browse, search and read every story in your library.",
       },
       { property: "og:title", content: "Stories — A simple story library" },
       {
@@ -31,6 +40,8 @@ function StoriesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
 
+  const randomStories = useMemo(() => shuffleStories(stories), [stories]);
+
   const categories = useMemo(
     () => Array.from(new Set(stories.map((s) => s.category).filter((c): c is string => !!c))).sort(),
     [stories],
@@ -38,7 +49,7 @@ function StoriesPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return stories.filter((story) => {
+    return randomStories.filter((story) => {
       if (category && story.category !== category) return false;
       if (!q) return true;
       return [story.title, story.description ?? "", story.category ?? ""]
@@ -46,14 +57,14 @@ function StoriesPage() {
         .toLowerCase()
         .includes(q);
     });
-  }, [stories, search, category]);
+  }, [randomStories, search, category]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">All stories</h1>
         <p className="text-muted-foreground">
-          {stories.length} {stories.length === 1 ? "story" : "stories"} in your library.
+          {stories.length} {stories.length === 1 ? "story" : "stories"} in your library, shown in random order.
         </p>
       </div>
 

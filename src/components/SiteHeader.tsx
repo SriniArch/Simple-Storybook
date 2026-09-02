@@ -5,6 +5,7 @@ const navItems = [
   { to: "/", label: "Stories" },
   { to: "/add", label: "Add Story" },
   { to: "/bulk-upload", label: "Bulk Upload" },
+  // { to: "/admin", label: "Admin" },
 ] as const;
 
 export function SiteHeader() {

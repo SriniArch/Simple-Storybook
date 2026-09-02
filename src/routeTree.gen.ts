@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AddRouteImport } from './routes/add'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BulkUploadRouteImport } from './routes/bulk-upload'
 import { Route as StoriesIdRouteImport } from './routes/stories.$id'
 import { Route as StoriesIdEditRouteImport } from './routes/stories.$id.edit'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const AddRoute = AddRouteImport.update({
   id: '/add',
   path: '/add',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BulkUploadRoute = BulkUploadRouteImport.update({
@@ -44,6 +50,7 @@ const StoriesIdEditRoute = StoriesIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/bulk-upload': typeof BulkUploadRoute
   '/stories/$id': typeof StoriesIdRouteWithChildren
   '/stories/$id/edit': typeof StoriesIdEditRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/bulk-upload': typeof BulkUploadRoute
   '/stories/$id': typeof StoriesIdRouteWithChildren
   '/stories/$id/edit': typeof StoriesIdEditRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/add': typeof AddRoute
+  '/admin': typeof AdminRoute
   '/bulk-upload': typeof BulkUploadRoute
   '/stories/$id': typeof StoriesIdRouteWithChildren
   '/stories/$id/edit': typeof StoriesIdEditRoute
@@ -66,13 +75,25 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/add' | '/bulk-upload' | '/stories/$id' | '/stories/$id/edit'
+    | '/'
+    | '/add'
+    | '/admin'
+    | '/bulk-upload'
+    | '/stories/$id'
+    | '/stories/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/add' | '/bulk-upload' | '/stories/$id' | '/stories/$id/edit'
+  to:
+    | '/'
+    | '/add'
+    | '/admin'
+    | '/bulk-upload'
+    | '/stories/$id'
+    | '/stories/$id/edit'
   id:
     | '__root__'
     | '/'
     | '/add'
+    | '/admin'
     | '/bulk-upload'
     | '/stories/$id'
     | '/stories/$id/edit'
@@ -81,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AddRoute: typeof AddRoute
+  AdminRoute: typeof AdminRoute
   BulkUploadRoute: typeof BulkUploadRoute
   StoriesIdRoute: typeof StoriesIdRouteWithChildren
 }
@@ -99,6 +121,13 @@ declare module '@tanstack/react-router' {
       path: '/add'
       fullPath: '/add'
       preLoaderRoute: typeof AddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bulk-upload': {
@@ -140,6 +169,7 @@ const StoriesIdRouteWithChildren = StoriesIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AddRoute: AddRoute,
+  AdminRoute: AdminRoute,
   BulkUploadRoute: BulkUploadRoute,
   StoriesIdRoute: StoriesIdRouteWithChildren,
 }

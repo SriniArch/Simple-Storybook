@@ -17,6 +17,8 @@ export type StoryInput = {
   content: string;
 };
 
+const HAS_DATABASE_URL = Boolean(process.env["DATABASE_URL"]);
+
 function db() {
   const url = process.env["DATABASE_URL"];
   if (!url) throw new Error("DATABASE_URL is not configured");
@@ -49,7 +51,27 @@ const SAMPLE_STORIES: StoryInput[] = [
   },
 ];
 
+const memoryStories: Story[] = SAMPLE_STORIES.map((story) => {
+  const now = new Date().toISOString();
+  return {
+    id: crypto.randomUUID(),
+    title: story.title,
+    description: story.description ?? null,
+    content: story.content,
+    category: story.category ?? null,
+    created_at: now,
+    updated_at: now,
+  };
+});
+
+function cloneMemoryStories(): Story[] {
+  return memoryStories.map((story) => ({ ...story }));
+}
+
 export async function ensureSchema(): Promise<void> {
+  if (!HAS_DATABASE_URL) {
+    return;
+  }
   if (!schemaReady) {
     schemaReady = (async () => {
       const sql = db();
@@ -83,6 +105,9 @@ export async function ensureSchema(): Promise<void> {
 }
 
 export async function listStories(): Promise<Story[]> {
+  if (!HAS_DATABASE_URL) {
+    return cloneMemoryStories();
+  }
   await ensureSchema();
   const sql = db();
   return (await sql`
@@ -93,6 +118,9 @@ export async function listStories(): Promise<Story[]> {
 }
 
 export async function getStory(id: string): Promise<Story | null> {
+  if (!HAS_DATABASE_URL) {
+    return cloneMemoryStories().find((story) => story.id === id) ?? null;
+  }
   await ensureSchema();
   const sql = db();
   const rows = (await sql`
@@ -104,6 +132,20 @@ export async function getStory(id: string): Promise<Story | null> {
 }
 
 export async function insertStory(input: StoryInput): Promise<Story> {
+  if (!HAS_DATABASE_URL) {
+    const now = new Date().toISOString();
+    const story: Story = {
+      id: crypto.randomUUID(),
+      title: input.title,
+      description: input.description ?? null,
+      content: input.content,
+      category: input.category ?? null,
+      created_at: now,
+      updated_at: now,
+    };
+    memoryStories.unshift(story);
+    return { ...story };
+  }
   await ensureSchema();
   const sql = db();
   const rows = (await sql`
@@ -115,6 +157,22 @@ export async function insertStory(input: StoryInput): Promise<Story> {
 }
 
 export async function insertStories(inputs: StoryInput[]): Promise<number> {
+  if (!HAS_DATABASE_URL) {
+    const stories = inputs.map((input) => {
+      const now = new Date().toISOString();
+      return {
+        id: crypto.randomUUID(),
+        title: input.title,
+        description: input.description ?? null,
+        content: input.content,
+        category: input.category ?? null,
+        created_at: now,
+        updated_at: now,
+      } satisfies Story;
+    });
+    memoryStories.unshift(...stories.reverse());
+    return stories.length;
+  }
   await ensureSchema();
   let added = 0;
   for (const input of inputs) {
@@ -125,6 +183,21 @@ export async function insertStories(inputs: StoryInput[]): Promise<number> {
 }
 
 export async function updateStory(id: string, input: StoryInput): Promise<Story | null> {
+  if (!HAS_DATABASE_URL) {
+    const index = memoryStories.findIndex((story) => story.id === id);
+    if (index === -1) return null;
+    const existing = memoryStories[index]!;
+    const updated: Story = {
+      ...existing,
+      title: input.title,
+      description: input.description ?? null,
+      content: input.content,
+      category: input.category ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    memoryStories[index] = updated;
+    return { ...updated };
+  }
   await ensureSchema();
   const sql = db();
   const rows = (await sql`
@@ -141,6 +214,12 @@ export async function updateStory(id: string, input: StoryInput): Promise<Story 
 }
 
 export async function deleteStory(id: string): Promise<boolean> {
+  if (!HAS_DATABASE_URL) {
+    const index = memoryStories.findIndex((story) => story.id === id);
+    if (index === -1) return false;
+    memoryStories.splice(index, 1);
+    return true;
+  }
   await ensureSchema();
   const sql = db();
   const rows = (await sql`delete from stories where id = ${id} returning id`) as { id: string }[];
