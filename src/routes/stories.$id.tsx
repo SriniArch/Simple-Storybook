@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, BookOpenText, Cloud, Pause, Play, Sparkles, Square, Star, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +36,13 @@ type RenderToken = {
 type RenderParagraph = {
   tokens: RenderToken[];
 };
+
+type SpeechVoiceOption = {
+  uri: string;
+  label: string;
+};
+
+const VOICE_STORAGE_KEY = "simple-storybook-selected-voice";
 
 function splitParagraphs(text: string) {
   const paragraphs: Array<{ text: string; start: number }> = [];
@@ -158,6 +166,8 @@ function ReadStoryPage() {
   const manualFallbackModeRef = useRef(false);
   const ignoreCurrentUtteranceEventsRef = useRef(false);
   const [isSpeechSupported, setIsSpeechSupported] = useState(false);
+  const [voices, setVoices] = useState<SpeechVoiceOption[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState("");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
@@ -181,6 +191,46 @@ function ReadStoryPage() {
   useEffect(() => {
     setIsSpeechSupported(typeof window !== "undefined" && "speechSynthesis" in window);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      return;
+    }
+
+    const readVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(
+        availableVoices.map((voice) => ({
+          uri: voice.voiceURI,
+          label: `${voice.name} (${voice.lang})${voice.default ? " — default" : ""}`,
+        })),
+      );
+    };
+
+    const storedVoiceURI = window.localStorage.getItem(VOICE_STORAGE_KEY);
+    if (storedVoiceURI) {
+      setSelectedVoiceURI(storedVoiceURI);
+    }
+
+    readVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", readVoices);
+
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", readVoices);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (selectedVoiceURI) {
+      window.localStorage.setItem(VOICE_STORAGE_KEY, selectedVoiceURI);
+    } else {
+      window.localStorage.removeItem(VOICE_STORAGE_KEY);
+    }
+  }, [selectedVoiceURI]);
 
   useEffect(() => {
     return () => {
@@ -253,6 +303,8 @@ function ReadStoryPage() {
       utteranceRef.current = wordUtterance;
       window.speechSynthesis.speak(wordUtterance);
     };
+
+    speakWordAt(startIndex);
   };
 
   const selectVoice = () => {
@@ -260,6 +312,14 @@ function ReadStoryPage() {
 
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return undefined;
+
+    if (selectedVoiceURI) {
+      const chosenVoice = voices.find((voice) => voice.voiceURI === selectedVoiceURI);
+      if (chosenVoice) {
+        return chosenVoice;
+      }
+    }
+
     const preferred = voices.find((voice) => {
       const lang = voice.lang.toLowerCase();
       return lang.startsWith("en") && !voice.localService;
@@ -440,6 +500,19 @@ function ReadStoryPage() {
               >
                 <Volume2 className="h-4 w-4" aria-hidden="true" />
               </Button>
+
+              <Select value={selectedVoiceURI} onValueChange={setSelectedVoiceURI} disabled={!canUseSpeech || voices.length === 0}>
+                <SelectTrigger className="h-9 w-[210px] rounded-full bg-white/90">
+                  <SelectValue placeholder={voices.length === 0 ? "Loading voices..." : "Choose voice"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {voices.map((voice) => (
+                    <SelectItem key={voice.uri} value={voice.uri}>
+                      {voice.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               <Button
                 type="button"
