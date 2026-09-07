@@ -94,9 +94,9 @@ function StoriesPage() {
           </div>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3 lg:w-[24rem]">
             {[
-              { label: "Randomized", value: "Fresh each visit" },
-              { label: "Kid-friendly", value: "Ages 6–13" },
-              { label: "Reading time", value: "At your pace" },
+              { label: "🎲 SURPRISE MODE", value: "We shuffled. You're welcome." },
+              { label: "🧠 CURIOUS MINDS", value: "For ages 6–13 and anyone who still asks why." },
+              { label: "⏱️ NO RUSHING", value: "Read it. Think about it. Snack break." },
             ].map((item) => (
               <div key={item.label} className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
                 <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -109,8 +109,8 @@ function StoriesPage() {
         </div>
 
         <div className="relative mt-6 rounded-2xl border border-border/60 bg-white/75 p-4 shadow-sm backdrop-blur sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative w-full max-w-2xl">
+          <div className="flex flex-col gap-4">
+            <div className="relative w-full">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
               <Input
                 value={search}
@@ -121,40 +121,11 @@ function StoriesPage() {
               />
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {/* <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <BookOpenText className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <span>Pick a category or wander the whole shelf.</span>
+              </span> */}
             </div>
           </div>
-
-          {categories.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant={category === null ? "default" : "outline"}
-                onClick={() => setCategory(null)}
-                className="rounded-full"
-              >
-                All stories
-              </Button>
-              {categories.map((c) => {
-                const tone = getStoryTone(c);
-                return (
-                  <Button
-                    key={c}
-                    size="sm"
-                    variant={category === c ? "default" : "outline"}
-                    onClick={() => setCategory(c)}
-                    className={`rounded-full ${category === c ? "shadow-sm" : "bg-white/70"}`}
-                  >
-                    <span className={`inline-flex h-2.5 w-2.5 rounded-full ${tone.dot}`} aria-hidden="true" />
-                    {c}
-                  </Button>
-                );
-              })}
-            </div>
-          )}
         </div>
       </section>
 
@@ -220,6 +191,42 @@ function StoriesPage() {
             );
           })}
         </ul>
+      )}
+
+      {categories.length > 0 && (
+        <section className="mt-8 rounded-3xl border border-border/70 bg-card/90 p-5 shadow-[0_12px_40px_-28px_rgba(125,140,170,0.4)] sm:p-6">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <BookOpenText className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span>Browse by category</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={category === null ? "default" : "outline"}
+              onClick={() => setCategory(null)}
+              className="rounded-full"
+            >
+              All stories
+            </Button>
+            {categories.map((c) => {
+              const tone = getStoryTone(c);
+              return (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={category === c ? "default" : "outline"}
+                  onClick={() => setCategory(c)}
+                  className={`rounded-full ${category === c ? "shadow-sm" : "bg-white/70"}`}
+                >
+                  <span className={`inline-flex h-2.5 w-2.5 rounded-full ${tone.dot}`} aria-hidden="true" />
+                  {c}
+                </Button>
+              );
+            })}
+          </div>
+        </section>
       )}
     </div>
   );
