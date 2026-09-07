@@ -1,5 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { BulkUploadStories } from "@/components/BulkUploadStories";
+import { useAdminAuth } from "@/lib/admin-auth";
 
 export const Route = createFileRoute("/bulk-upload")({
   head: () => ({
@@ -17,6 +18,12 @@ export const Route = createFileRoute("/bulk-upload")({
 });
 
 function BulkUploadPage() {
+  const { isAdmin } = useAdminAuth();
+
+  if (!isAdmin) {
+    return <Navigate to="/admin" search={{ redirect: "/bulk-upload" }} replace />;
+  }
+
   return (
     <BulkUploadStories
       title="Bulk upload"

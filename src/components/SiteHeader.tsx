@@ -1,14 +1,21 @@
 import { Link } from "@tanstack/react-router";
 import { BookOpen } from "lucide-react";
-
-const navItems = [
-  { to: "/", label: "Stories" },
-  { to: "/add", label: "Add Story" },
-  { to: "/bulk-upload", label: "Bulk Upload" },
-  // { to: "/admin", label: "Admin" },
-] as const;
+import { Button } from "@/components/ui/button";
+import { useAdminAuth } from "@/lib/admin-auth";
 
 export function SiteHeader() {
+  const { isAdmin, logout } = useAdminAuth();
+  const navItems = [
+    { to: "/", label: "Stories" },
+    ...(isAdmin
+      ? ([
+          { to: "/add", label: "Add Story" },
+          { to: "/bulk-upload", label: "Bulk Upload" },
+        ] as const)
+      : []),
+    { to: "/admin", label: isAdmin ? "Admin" : "Admin Login" },
+  ] as const;
+
   return (
     <header className="border-b border-border bg-background">
       <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -16,7 +23,8 @@ export function SiteHeader() {
           <BookOpen className="h-5 w-5 text-primary" aria-hidden="true" />
           Stories
         </Link>
-        <nav className="flex flex-wrap items-center gap-1" aria-label="Main">
+        <div className="flex flex-wrap items-center gap-2">
+          <nav className="flex flex-wrap items-center gap-1" aria-label="Main">
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -28,7 +36,13 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-        </nav>
+          </nav>
+          {isAdmin && (
+            <Button type="button" variant="outline" size="sm" onClick={logout}>
+              Logout
+            </Button>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -1,8 +1,9 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { Navigate, createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { StoryForm } from "@/components/StoryForm";
+import { useAdminAuth } from "@/lib/admin-auth";
 import { storyQueryOptions } from "@/lib/stories-queries";
 import { updateStory } from "@/lib/stories.functions";
 import type { StoryFormValues } from "@/lib/story-schema";
@@ -24,11 +25,16 @@ export const Route = createFileRoute("/stories/$id/edit")({
 
 function EditStoryPage() {
   const { id } = Route.useParams();
+  const { isAdmin } = useAdminAuth();
   const { data: story } = useSuspenseQuery(storyQueryOptions(id));
   const navigate = useNavigate();
   const router = useRouter();
   const queryClient = useQueryClient();
   const save = useServerFn(updateStory);
+
+  if (!isAdmin) {
+    return <Navigate to="/admin" search={{ redirect: `/stories/${id}/edit` }} replace />;
+  }
 
   const mutation = useMutation({
     mutationFn: (values: StoryFormValues) => save({ data: { id, values } }),

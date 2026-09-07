@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAdminAuth } from "@/lib/admin-auth";
 import { storiesQueryOptions } from "@/lib/stories-queries";
 
 function shuffleStories<T>(items: T[]) {
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/")({
 });
 
 function StoriesPage() {
+  const { isAdmin } = useAdminAuth();
   const { data: stories } = useSuspenseQuery(storiesQueryOptions());
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
@@ -102,9 +104,19 @@ function StoriesPage() {
       {filtered.length === 0 ? (
         <div className="mt-12 rounded-lg border border-border bg-muted/40 p-10 text-center">
           <p className="text-foreground">No stories match your search.</p>
-          <Link to="/add" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
-            Add a story
-          </Link>
+          {isAdmin ? (
+            <Link to="/add" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+              Add a story
+            </Link>
+          ) : (
+            <Link
+              to="/admin"
+              search={{ redirect: "/add" }}
+              className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+            >
+              Login as admin to add stories
+            </Link>
+          )}
         </div>
       ) : (
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
