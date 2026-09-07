@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Pause, Play, Square, Volume2 } from "lucide-react";
+import { ArrowLeft, BookOpenText, Cloud, Pause, Play, Sparkles, Square, Star, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,6 +19,7 @@ import {
 import { storyQueryOptions } from "@/lib/stories-queries";
 import { useAdminAuth } from "@/lib/admin-auth";
 import { deleteStory } from "@/lib/stories.functions";
+import { getStoryTone } from "@/lib/story-style";
 
 type WordBoundary = {
   start: number;
@@ -160,6 +161,7 @@ function ReadStoryPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState<number | null>(null);
+  const storyTone = getStoryTone(story?.category ?? story?.title);
 
   const canUseSpeech = isSpeechSupported;
   const storyText = useMemo(() => story?.content?.trim() ?? "", [story?.content]);
@@ -251,8 +253,6 @@ function ReadStoryPage() {
       utteranceRef.current = wordUtterance;
       window.speechSynthesis.speak(wordUtterance);
     };
-
-    speakWordAt(startIndex);
   };
 
   const selectVoice = () => {
@@ -260,7 +260,6 @@ function ReadStoryPage() {
 
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return undefined;
-
     const preferred = voices.find((voice) => {
       const lang = voice.lang.toLowerCase();
       return lang.startsWith("en") && !voice.localService;
@@ -379,9 +378,16 @@ function ReadStoryPage() {
   if (!story) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">Story not found</h1>
-        <p className="mt-2 text-muted-foreground">This story may have been deleted.</p>
-        <Link to="/" className="mt-6 inline-block text-sm font-medium text-primary hover:underline">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-100 via-white to-amber-100 text-sky-500 shadow-sm ring-1 ring-sky-200/70">
+          <BookOpenText className="h-8 w-8" aria-hidden="true" />
+        </div>
+        <h1 className="mt-6 text-3xl font-semibold tracking-tight text-foreground">Story not found</h1>
+        <p className="mt-2 text-muted-foreground">This story may have been moved or deleted.</p>
+        <Link
+          to="/"
+          className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary transition-all hover:-translate-y-0.5"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to stories
         </Link>
       </div>
@@ -389,121 +395,147 @@ function ReadStoryPage() {
   }
 
   return (
-    <article className="mx-auto max-w-2xl px-4 py-10">
+    <article className="mx-auto max-w-4xl px-4 py-8 sm:py-10">
       <Link
         to="/"
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+        className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-1.5 text-sm font-medium text-muted-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Back to stories
       </Link>
 
-      {story.category && (
-        <span className="mt-6 inline-block rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
-          {story.category}
-        </span>
-      )}
-      <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{story.title}</h1>
-
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Story narration controls">
-          <Button
-            type="button"
-            variant={isPlaying ? "secondary" : "outline"}
-            className="gap-2"
-            onClick={startNarration}
-            disabled={!canUseSpeech}
-            aria-label="Read story aloud"
-            title={!canUseSpeech ? "Read-aloud is unavailable in this browser" : undefined}
-          >
-            <Volume2 className="h-4 w-4" aria-hidden="true" />
-            {isPlaying ? "Reading aloud" : "Read aloud"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            onClick={isPaused ? resumeNarration : pauseNarration}
-            disabled={!canUseSpeech || !isPlaying}
-            aria-label={isPaused ? "Resume narration" : "Pause narration"}
-          >
-            {isPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
-            {isPaused ? "Resume" : "Pause"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2"
-            onClick={stopNarration}
-            disabled={!canUseSpeech || (!isPlaying && !isPaused)}
-            aria-label="Stop narration"
-          >
-            <Square className="h-4 w-4" aria-hidden="true" />
-            Stop
-          </Button>
-
-          {!canUseSpeech && (
-            <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
-              Read-aloud is not supported on this browser/device.
-            </p>
-          )}
+      <div className="relative mt-5 overflow-hidden rounded-[2rem] border border-border/70 bg-gradient-to-br from-white via-sky-50/60 to-rose-50/60 p-5 shadow-[0_18px_60px_-36px_rgba(125,140,170,0.45)] sm:p-7">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+          <div className="absolute left-4 top-4 text-sky-200/70">
+            <Cloud className="h-9 w-9" />
+          </div>
+          <div className="absolute right-5 top-6 text-amber-200/70">
+            <Star className="h-5 w-5" />
+          </div>
+          <div className="absolute bottom-5 right-6 text-violet-200/70">
+            <Sparkles className="h-5 w-5" />
+          </div>
         </div>
-      </div>
-      {story.description && <p className="mt-3 text-lg text-muted-foreground">{story.description}</p>}
 
-      <div className="mt-8 space-y-5 text-lg leading-8 text-foreground">
-        {renderParagraphs.map((paragraph, paragraphIndex) => (
-          <p key={paragraphIndex} className="whitespace-pre-wrap">
-            {paragraph.tokens.map((token, tokenIndex) => {
-              if (!token.isWord) {
-                return <span key={`${paragraphIndex}-${tokenIndex}`}>{token.text}</span>;
-              }
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl space-y-4">
+            <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ring-1 ${storyTone.badge}`}>
+              {story.category ?? "Story"}
+            </div>
+            <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">{story.title}</h1>
+            {story.description && <p className="text-lg leading-8 text-muted-foreground">{story.description}</p>}
+          </div>
 
-              const isCurrentWord = token.wordIndex === currentWordIndex;
+          <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-sm backdrop-blur">
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Story narration controls">
+              <Button
+                type="button"
+                variant={isPlaying ? "secondary" : "outline"}
+                size="icon"
+                className="rounded-full"
+                onClick={startNarration}
+                disabled={!canUseSpeech}
+                aria-label="Read story aloud"
+                title={!canUseSpeech ? "Read-aloud is unavailable in this browser" : isPlaying ? "Reading aloud" : "Read aloud"}
+              >
+                <Volume2 className="h-4 w-4" aria-hidden="true" />
+              </Button>
 
-              return (
-                <span
-                  key={`${paragraphIndex}-${tokenIndex}`}
-                  data-word-index={token.wordIndex ?? undefined}
-                  className={isCurrentWord ? "rounded-sm bg-amber-200/80 text-foreground ring-1 ring-amber-300 transition-colors" : undefined}
-                  aria-current={isCurrentWord ? "true" : undefined}
-                >
-                  {token.text}
-                </span>
-              );
-            })}
-          </p>
-        ))}
-      </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={isPaused ? resumeNarration : pauseNarration}
+                disabled={!canUseSpeech || !isPlaying}
+                aria-label={isPaused ? "Resume narration" : "Pause narration"}
+                title={isPaused ? "Resume" : "Pause"}
+              >
+                {isPaused ? <Play className="h-4 w-4" aria-hidden="true" /> : <Pause className="h-4 w-4" aria-hidden="true" />}
+              </Button>
 
-      {isAdmin && (
-        <div className="mt-12 flex flex-wrap gap-3 border-t border-border pt-6">
-          <Button asChild variant="outline">
-            <Link to="/stories/$id/edit" params={{ id }}>
-              Edit story
-            </Link>
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Delete</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete this story?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  “{story.title}” will be permanently removed. This cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => deleteMutation.mutate()}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={stopNarration}
+                disabled={!canUseSpeech || (!isPlaying && !isPaused)}
+                aria-label="Stop narration"
+                title="Stop"
+              >
+                <Square className="h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+
+            {!canUseSpeech && (
+              <p className="mt-3 text-sm text-muted-foreground" role="status" aria-live="polite">
+                Read-aloud is not supported on this browser or device.
+              </p>
+            )}
+          </div>
         </div>
-      )}
+
+        <div className="mt-6 rounded-[1.75rem] border border-border/70 bg-white/85 p-5 shadow-sm sm:p-7">
+          <div className="space-y-5 text-lg leading-8 text-foreground sm:text-xl sm:leading-9">
+            {renderParagraphs.map((paragraph, paragraphIndex) => (
+              <p key={paragraphIndex} className="whitespace-pre-wrap">
+                {paragraph.tokens.map((token, tokenIndex) => {
+                  if (!token.isWord) {
+                    return <span key={`${paragraphIndex}-${tokenIndex}`}>{token.text}</span>;
+                  }
+
+                  const isCurrentWord = token.wordIndex === currentWordIndex;
+
+                  return (
+                    <span
+                      key={`${paragraphIndex}-${tokenIndex}`}
+                      data-word-index={token.wordIndex ?? undefined}
+                      className={
+                        isCurrentWord
+                          ? "rounded-md bg-amber-200/70 px-1 text-foreground ring-1 ring-amber-300/70 transition-colors"
+                          : undefined
+                      }
+                      aria-current={isCurrentWord ? "true" : undefined}
+                    >
+                      {token.text}
+                    </span>
+                  );
+                })}
+              </p>
+            ))}
+          </div>
+        </div>
+
+        {isAdmin && (
+          <div className="mt-8 flex flex-wrap gap-3 border-t border-border/70 pt-6">
+            <Button asChild variant="outline" className="rounded-full">
+              <Link to="/stories/$id/edit" params={{ id }}>
+                Edit story
+              </Link>
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="rounded-full">
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this story?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    “{story.title}” will be permanently removed. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => deleteMutation.mutate()}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </div>
     </article>
   );
 }
